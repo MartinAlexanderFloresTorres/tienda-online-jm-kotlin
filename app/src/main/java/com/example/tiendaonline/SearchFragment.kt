@@ -1,59 +1,163 @@
-package com.example.tiendaonline
+    package com.example.tiendaonline
 
-import android.os.Bundle
-import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+    import android.os.Bundle
+    import android.text.Editable
+    import android.text.TextWatcher
+    import android.view.KeyEvent
+    import android.view.LayoutInflater
+    import android.view.View
+    import android.view.ViewGroup
+    import android.view.inputmethod.EditorInfo
+    import android.widget.Toast
+    import androidx.fragment.app.Fragment
+    import androidx.lifecycle.lifecycleScope
+    import androidx.navigation.fragment.findNavController
+    import androidx.recyclerview.widget.LinearLayoutManager
+    import com.example.tiendaonline.databinding.FragmentSearchBinding
+    import kotlinx.coroutines.launch
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+    class SearchFragment : Fragment() {
+        private var _binding: FragmentSearchBinding? = null
+        private val binding get() = _binding!!
 
-/**
- * A simple [Fragment] subclass.
- * Use the [SearchFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class SearchFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+        private lateinit var productAdapter: ProductAdapter
+        private var productList = mutableListOf<Product>()
+        private var currentPage = 1
+        private var totalPages = 1
+        private var searchQuery = ""
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+        override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?,
+            savedInstanceState: Bundle?
+        ): View? {
+            // Inflar el layout para este fragmento
+            _binding = FragmentSearchBinding.inflate(inflater, container, false)
+            return binding.root
         }
-    }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_search, container, false)
-    }
+        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+            super.onViewCreated(view, savedInstanceState)
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment SearchFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            SearchFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+            // Configurar el RecyclerView
+            productAdapter = ProductAdapter(productList) { product ->
+                val action = SearchFragmentDirections.actionSearchFragmentToProductDetailFragment(product.url)
+                findNavController().navigate(action)
+            }
+            binding.recyclerViewSearchResults.apply {
+                layoutManager = LinearLayoutManager(requireContext())
+                adapter = productAdapter
+            }
+
+            binding.editTextSearch.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                    // No se necesita implementar en este caso
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    searchQuery = s.toString()
+                    if (searchQuery.isEmpty()) {
+                        productList.clear()
+                        productAdapter.notifyDataSetChanged()
+                        binding.btnPrevious.isEnabled = false
+                        binding.btnNext.isEnabled = false
+                        currentPage = 1
+                    }
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+                    // No se necesita implementar en este caso
+                }
+            })
+
+            binding.editTextSearch.setOnEditorActionListener { v, actionId, event ->
+                if (actionId == EditorInfo.IME_ACTION_SEARCH || event?.keyCode == KeyEvent.KEYCODE_ENTER) {
+                    if (searchQuery.isNotEmpty()) {
+                        currentPage = 1
+                        searchProducts(searchQuery, currentPage)
+                    } else {
+                        showAlert("El término de búsqueda no puede estar vacío.")
+                    }
+                    true
+                } else {
+                    false
                 }
             }
+
+            binding.btnSearch.setOnClickListener {
+                if (searchQuery.isNotEmpty()) {
+                    currentPage = 1
+                    searchProducts(searchQuery, currentPage)
+                } else {
+                    showAlert("El término de búsqueda no puede estar vacío.")
+                }
+            }
+
+            binding.btnClear.setOnClickListener {
+                binding.editTextSearch.text.clear()
+            }
+
+            // Configurar los botones de paginación
+            binding.btnPrevious.setOnClickListener {
+                if (currentPage > 1) {
+                    searchProducts(searchQuery, currentPage - 1)
+                }
+            }
+
+            binding.btnNext.setOnClickListener {
+                if (currentPage < totalPages) {
+                    searchProducts(searchQuery, currentPage + 1)
+                }
+            }
+        }
+
+        private fun searchProducts(query: String, page: Int) {
+            if (query.isEmpty()) {
+                showAlert("El término de búsqueda no puede estar vacío.")
+                return
+            }
+            showLoading(true)
+            lifecycleScope.launch {
+                try {
+                    val response = RetrofitClient.apiService.searchProducts(query, page)
+                    val products = response.docs
+                    productList.clear()
+                    productList.addAll(products)
+                    productAdapter.notifyDataSetChanged()
+
+                    // Actualizar el estado de la paginación
+                    totalPages = response.totalPages
+                    currentPage = response.page
+                    updatePaginationButtons(response)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    showAlert("No se encontraron productos")
+
+                    // Limpiar productos y actualizar el adaptador
+                    productList.clear()
+                    productAdapter.notifyDataSetChanged()
+                    binding.btnPrevious.isEnabled = false
+                    binding.btnNext.isEnabled = false
+                } finally {
+                    showLoading(false)
+                }
+            }
+        }
+
+        private fun updatePaginationButtons(response: ProductResponse) {
+            binding.btnPrevious.isEnabled = response.hasPrevPage
+            binding.btnNext.isEnabled = response.hasNextPage
+        }
+
+        private fun showLoading(isLoading: Boolean) {
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
+
+        private fun showAlert(message: String) {
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
+
+        override fun onDestroyView() {
+            super.onDestroyView()
+            _binding = null
+        }
     }
-}

@@ -9,7 +9,16 @@
         android:id="@+id/nav_frag_store"
         android:name="com.example.tiendaonline.StoreFragment"
         android:label="@string/menu_store"
-        tools:layout="@layout/fragment_store" />
+        tools:layout="@layout/fragment_store">
+        <action
+            android:id="@+id/action_storeFragment_to_productDetailFragment"
+            app:destination="@id/nav_frag_product">
+            <argument
+                android:name="productSlug"
+                app:argType="string" />
+        </action>
+    </fragment>
+
 
     <fragment
         android:id="@+id/nav_frag_categories"
@@ -26,10 +35,29 @@
         android:id="@+id/nav_frag_search"
         android:name="com.example.tiendaonline.SearchFragment"
         android:label="@string/menu_search"
-        tools:layout="@layout/fragment_search" />
+        tools:layout="@layout/fragment_search">
+        <action
+            android:id="@+id/action_searchFragment_to_productDetailFragment"
+            app:destination="@id/nav_frag_product">
+            <argument
+                android:name="productSlug"
+                app:argType="string" />
+        </action>
+    </fragment>
+
     <fragment
         android:id="@+id/nav_frag_maps"
         android:name="com.example.tiendaonline.MapsFragment"
         android:label="@string/menu_map"
         tools:layout="@layout/fragment_maps" />
+
+    <fragment
+        android:id="@+id/nav_frag_product"
+        android:name="com.example.tiendaonline.ProductDetailFragment"
+        android:label="Detalle del producto"
+        tools:layout="@layout/fragment_product">
+        <argument
+            android:name="productSlug"
+            app:argType="string" />
+    </fragment>
 </navigation>

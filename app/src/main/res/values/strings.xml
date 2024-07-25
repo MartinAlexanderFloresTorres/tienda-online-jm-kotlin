@@ -5,10 +5,13 @@
     <string name="nav_header_title">J&amp;M PERÚ</string>
     <string name="nav_header_subtitle">Encuentra lo que buscas en J&amp;M.</string>
     <string name="nav_header_desc">Navegaciones</string>
+    <string name="email">jmperu07@gmail.com</string>
 
     <string name="menu_store">Tienda</string>
     <string name="menu_search">Buscar</string>
     <string name="menu_categories">Categorias</string>
     <string name="menu_contact">Contactanos</string>
     <string name="menu_map">Ubicanos</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
