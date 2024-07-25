@@ -16,8 +16,8 @@ class ImageAdapter(private val imageUrls: List<String>) : RecyclerView.Adapter<I
         val imageUrl = imageUrls[position]
         Glide.with(holder.binding.productDetailImage.context)
             .load(imageUrl)
-            .placeholder(R.drawable.side_nav_bar)
-            .error(R.drawable.side_nav_bar)
+            .placeholder(R.drawable.baseline_image_24)
+            .error(R.drawable.baseline_image_24)
             .into(holder.binding.productDetailImage)
     }
 

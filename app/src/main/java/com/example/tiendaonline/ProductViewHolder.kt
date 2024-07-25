@@ -17,11 +17,11 @@ class ProductViewHolder(
         if (imageUrl != null) {
             Glide.with(binding.productImage.context)
                 .load(imageUrl)
-                .placeholder(R.drawable.side_nav_bar)
-                .error(R.drawable.side_nav_bar)
+                .placeholder(R.drawable.baseline_image_24)
+                .error(R.drawable.baseline_image_24)
                 .into(binding.productImage)
         } else {
-            binding.productImage.setImageResource(R.drawable.side_nav_bar)
+            binding.productImage.setImageResource(R.drawable.baseline_image_24)
         }
 
         // Configura el botón para navegar al detalle del producto
